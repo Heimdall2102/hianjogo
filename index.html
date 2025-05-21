@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jogo Medieval Infinity Run</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+  /* Using a medieval-style google font "MedievalSharp" */
+
+  /* Reset */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background: linear-gradient(to top, #4a2c0e 50%, #b18a4f 50%);
+    font-family: 'MedievalSharp', cursive;
+    user-select: none;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+
+  #game {
+    position: relative;
+    width: 800px;
+    height: 400px;
+    background: linear-gradient(to top, #8c6b3a, #c9b382);
+    border: 4px solid #372d1a;
+    border-radius: 12px;
+    box-shadow:
+      inset 0 0 70px rgba(0,0,0,0.3),
+      0 8px 10px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
+  #ground {
+    position: absolute;
+    bottom: 0;
+    width: 200%;
+    height: 80px;
+    background: linear-gradient(to right, #3c2f1f 20%, #9f7a3b 20%, #9f7a3b 80%, #3c2f1f 80%);
+    background-size: 80px 80px;
+    animation: groundMove linear infinite;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.7);
+    z-index: 10;
+  }
+
+  @keyframes groundMove {
+    0% { background-position-x: 0; }
+    100% { background-position-x: -80px; }
+  }
+
+  #knight {
+    position: absolute;
+    bottom: 80px;
+    left: 80px;
+    width: 60px;
+    height: 80px;
+    background: linear-gradient(145deg, #797979, #4c4c4c);
+    border-radius: 12px 12px 4px 4px;
+    box-shadow: inset 0 3px 5px #2f2f2f;
+    animation: knightRun 0.6s steps(6) infinite;
+    z-index: 20;
+  }
+
+  /* Knight simple animation to simulate running */
+  @keyframes knightRun {
+    0% { background-position-x: 0; }
+    100% { background-position-x: -360px; }
+  }
+
+  #knight.jumping {
+    animation-name: none;
+  }
+
+  #knight::before {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    left: 6px;
+    width: 20px;
+    height: 40px;
+    background:
+      radial-gradient(circle at center, #b06a42 30%, #6c3a1b 80%);
+    border-radius: 8px;
+    box-shadow: inset 0 4px 6px #9b582b;
+  }
+
+  #obstacles {
+    position: absolute;
+    bottom: 80px;
+    height: 80px;
+    width: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  .obstacle {
+    position: absolute;
+    bottom: 0;
+    width: 40px;
+    height: 60px;
+    background: linear-gradient(135deg, #433018, #6d4b24);
+    border-radius: 10px 10px 6px 6px;
+    box-shadow: inset 0 0 15px #2b1d05;
+    animation-timing-function: linear;
+  }
+
+  /* Different obstacle types */
+  .spike {
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    background: linear-gradient(to top, #4a351c, #c39f6d);
+    box-shadow: inset 0 3px 5px #7a5f32;
+  }
+
+  .barrel {
+    width: 50px;
+    height: 60px;
+    border-radius: 25px / 60px;
+    background: linear-gradient(135deg, #664422, #422e10);
+    box-shadow: inset 0 0 15px #2f1f07;
+  }
+
+  .enemy {
+    width: 50px;
+    height: 70px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #5a1a1a, #ac4e4e);
+    box-shadow: inset 0 0 10px #460f0f;
+    position: absolute;
+  }
+
+  /* Jump animation */
+  @keyframes jumpUp {
+    0% { bottom: 80px; }
+    50% { bottom: 180px; }
+    100% { bottom: 80px; }
+  }
+
+  #scoreboard {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    background: rgba(0,0,0,0.5);
+    color: #f4e1a8;
+    font-size: 28px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    text-shadow: 1px 1px 2px #000;
+    user-select: none;
+    font-weight: bold;
+    letter-spacing: 3px;
+    z-index: 30;
+  }
+
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #f6e291;
+    font-size: 36px;
+    padding: 20px 40px;
+    background: rgba(30, 15, 0, 0.9);
+    border: 3px solid #cfa83a;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: 900;
+    letter-spacing: 2px;
+    box-shadow: 0 0 20px #cfb347;
+    user-select: none;
+    display: none;
+    z-index: 50;
+  }
+
+  #instructions {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #f4e1a8;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+    user-select: none;
+    z-index: 30;
+  }
+
+  /* Animations for obstacles */
+  @keyframes obstacleMove {
+    from { right: -60px; }
+    to { right: 900px; }
+  }
+</style>
+</head>
+<body>
+  <div id="game" tabindex="0" aria-label="Jogo de corrida infinita medieval">
+    <div id="scoreboard">0</div>
+    <div id="instructions">Pressione Espaço ou ↑ para pular</div>
+    <div id="message">Fim de Jogo!<br>Pressione R para reiniciar</div>
+    <div id="ground"></div>
+    <div id="knight"></div>
+    <div id="obstacles"></div>
+  </div>
+
+<script>
+  (() => {
+    const game = document.getElementById('game');
+    const knight = document.getElementById('knight');
+    const obstaclesContainer = document.getElementById('obstacles');
+    const scoreboard = document.getElementById('scoreboard');
+    const message = document.getElementById('message');
+    const ground = document.getElementById('ground');
+
+    let jumping = false;
+    let jumpDuration = 700; // ms
+    let jumpHeight = 100;
+
+    let gameSpeed = 6; // pixels per frame base speed of obstacle
+    let score = 0;
+    let obstacleFrequency = 1500; // ms
+    let obstacleTimer = null;
+    let increaseDifficultyTimer = null;
+    let running = false;
+
+    let obstacles = [];
+
+    // For smooth jump animation
+    let jumpStartTime = null;
+
+    function jump() {
+      if (jumping || !running) return;
+      jumping = true;
+      jumpStartTime = performance.now();
+
+      knight.classList.add('jumping');
+      // We use requestAnimationFrame for smooth jumping motion
+      function animateJump(time) {
+        if (!jumpStartTime) jumpStartTime = time;
+        const elapsed = time - jumpStartTime;
+        if (elapsed > jumpDuration) {
+          knight.style.bottom = '80px';
+          jumping = false;
+          knight.classList.remove('jumping');
+          return;
+        }
+        // Using a sine wave for smooth jump up and down
+        const percent = elapsed / jumpDuration;
+        const height = Math.sin(percent * Math.PI) * jumpHeight + 80;
+        knight.style.bottom = height + 'px';
+        requestAnimationFrame(animateJump);
+      }
+      requestAnimationFrame(animateJump);
+    }
+
+    function createObstacle() {
+      if (!running) return;
+      const obstacle = document.createElement('div');
+      obstacle.classList.add('obstacle');
+
+      // Randomly choose type of obstacle based on score
+      let typeProb = Math.random();
+      let type = "spike";
+      if(score > 100){
+        // Add barrels sometimes
+        type = typeProb < 0.4 ? 'barrel' : 'spike';
+      }
+      if(score > 300){
+        // Add enemy sometimes
+        if(typeProb < 0.3) type = 'enemy';
+        else if(typeProb < 0.6) type = 'barrel';
+        else type = 'spike';
+      }
+
+      obstacle.classList.add(type);
+
+      // Assign size for easier collision detection
+      let size = {width: 40, height: 60};
+      if(type === "barrel"){
+        size = {width: 50, height: 60};
+      }
+      if(type === "enemy"){
+        size = {width: 50, height: 70};
+      }
+      obstacle.style.width = size.width + 'px';
+      obstacle.style.height = size.height + 'px';
+
+      obstacle.style.right = '-60px';
+      obstacle.style.bottom = '0';
+
+      obstaclesContainer.appendChild(obstacle);
+
+      // Store obstacle with position
+      obstacles.push({
+        element: obstacle,
+        width: size.width,
+        height: size.height,
+        x: game.offsetWidth,
+        y: 80, // ground height
+        type: type,
+      });
+    }
+
+    function updateObstacles(deltaTime) {
+      // Move obstacles from right to left
+      for(let i = obstacles.length -1; i>=0; i--){
+        const obs = obstacles[i];
+        obs.x -= gameSpeed * (deltaTime / 16);
+        if(obs.x + obs.width < 0){
+          // Remove from DOM and array
+          obstaclesContainer.removeChild(obs.element);
+          obstacles.splice(i, 1);
+          continue;
+        }
+        obs.element.style.right = (game.offsetWidth - obs.x - obs.width) + 'px';
+      }
+    }
+
+    function checkCollision() {
+      const knightRect = knight.getBoundingClientRect();
+      for(const obs of obstacles){
+        const obsRect = obs.element.getBoundingClientRect();
+        if(
+          knightRect.right > obsRect.left + 5 &&
+          knightRect.left < obsRect.right - 5 &&
+          knightRect.bottom > obsRect.top + 5 &&
+          knightRect.top < obsRect.bottom - 10
+        ){
+          // Collision detected
+          gameOver();
+          break;
+        }
+      }
+    }
+
+    function gameOver() {
+      running = false;
+      clearInterval(obstacleTimer);
+      clearInterval(increaseDifficultyTimer);
+      message.style.display = 'block';
+      ground.style.animationPlayState = 'paused';
+      // Stop all obstacles animations
+      obstacles.forEach(o => o.element.style.animationPlayState = 'paused');
+    }
+
+    function resetGame() {
+      // Clear obstacles
+      obstacles.forEach(o => obstaclesContainer.removeChild(o.element));
+      obstacles = [];
+      score = 0;
+      gameSpeed = 6;
+      obstacleFrequency = 1500;
+      scoreboard.textContent = score;
+      message.style.display = 'none';
+      jumping = false;
+      ground.style.animationDuration = (2400 / gameSpeed) + 's';
+      ground.style.animationPlayState = 'running';
+      knight.style.bottom = '80px';
+      running = true;
+
+      obstacleTimer = setInterval(() => {
+        createObstacle();
+      }, obstacleFrequency);
+
+      increaseDifficultyTimer = setInterval(() => {
+        // Increase speed every 15 seconds and reduce spawn time to make harder
+        if(gameSpeed < 18){
+          gameSpeed += 1.2;
+        }
+        if(obstacleFrequency > 600){
+          obstacleFrequency -= 120;
+          clearInterval(obstacleTimer);
+          obstacleTimer = setInterval(() => {
+            createObstacle();
+          }, obstacleFrequency);
+        }
+        ground.style.animationDuration = (2400 / gameSpeed) + 's';
+      }, 15000);
+
+      // Start the game loop
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Score update function
+    let lastScoreTime = 0;
+
+    // Time tracking
+    let lastTime = 0;
+
+    function gameLoop(time = 0) {
+      if(!running) return;
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      // Update obstacles position
+      updateObstacles(deltaTime);
+
+      // Check collisions
+      checkCollision();
+
+      // Update score every 100 ms
+      if(time - lastScoreTime > 100){
+        score++;
+        lastScoreTime = time;
+        scoreboard.textContent = score;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Controls
+    function handleKeyDown(e) {
+      if(!running && (e.key === 'r' || e.key === 'R')){
+        resetGame();
+      }
+      if(e.code === 'Space' || e.code === 'ArrowUp'){
+        e.preventDefault();
+        jump();
+      }
+    }
+
+    game.addEventListener('keydown', handleKeyDown);
+    game.setAttribute('tabindex', '0');
+    game.focus();
+
+    // Initial setup
+    resetGame();
+
+  })();
+</script>
+</body>
+</html>
+
